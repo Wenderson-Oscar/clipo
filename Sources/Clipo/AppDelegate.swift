@@ -249,6 +249,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func paste(item: ClipItem) {
         closePanel()
+        store.moveToTop(item)
 
         switch item.kind {
         case .image:

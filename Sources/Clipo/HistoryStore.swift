@@ -71,6 +71,16 @@ final class HistoryStore: ObservableObject {
 
     // MARK: - Ações
 
+    func moveToTop(_ item: ClipItem) {
+        guard items.first?.id != item.id else { return }
+        items.removeAll { $0.id == item.id }
+        var promoted = item
+        promoted = ClipItem(id: item.id, kind: item.kind, createdAt: Date(),
+                            text: item.text, imagePath: item.imagePath, hash: item.hash)
+        items.insert(promoted, at: 0)
+        persist()
+    }
+
     func delete(_ item: ClipItem) {
         items.removeAll { $0.id == item.id }
         if let path = item.imagePath {

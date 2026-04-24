@@ -188,10 +188,11 @@ struct ClipRow: View {
     let item: ClipItem
     @State private var isHovering = false
     @State private var showPreview = false
+    @State private var loadedImage: NSImage? = nil
 
     var body: some View {
         HStack(spacing: 10) {
-            thumbnail
+            thumbnailView
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.displayTitle)
                     .lineLimit(2)
@@ -223,16 +224,24 @@ struct ClipRow: View {
         .popover(isPresented: $showPreview, arrowEdge: .trailing) {
             ClipPreview(item: item)
         }
+        .onAppear {
+            if item.kind == .image {
+                DispatchQueue.global(qos: .utility).async {
+                    let img = item.loadImage()
+                    DispatchQueue.main.async { loadedImage = img }
+                }
+            }
+        }
     }
 
     // MARK: - Thumbnail
 
     @ViewBuilder
-    private var thumbnail: some View {
+    private var thumbnailView: some View {
         ZStack {
             switch item.kind {
             case .image:
-                if let img = item.loadImage() {
+                if let img = loadedImage {
                     Image(nsImage: img)
                         .resizable()
                         .scaledToFill()
@@ -307,19 +316,22 @@ struct ClipRow: View {
 
 struct ClipPreview: View {
     let item: ClipItem
+    @State private var loadedImage: NSImage? = nil
 
     var body: some View {
         Group {
             switch item.kind {
             case .image:
-                if let img = item.loadImage() {
+                if let img = loadedImage {
                     Image(nsImage: img)
                         .resizable()
                         .scaledToFit()
                         .frame(maxWidth: 300, maxHeight: 240)
                         .padding(8)
                 } else {
-                    fallbackText("Imagem indisponível")
+                    ProgressView()
+                        .frame(width: 120, height: 80)
+                        .padding(8)
                 }
             case .link:
                 VStack(alignment: .leading, spacing: 6) {
@@ -357,13 +369,14 @@ struct ClipPreview: View {
                 .frame(width: 420, height: min(CGFloat((item.text ?? "").count / 4 + 80), 480))
             }
         }
-    }
-
-    private func fallbackText(_ msg: String) -> some View {
-        Text(msg)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .padding(12)
+        .onAppear {
+            if item.kind == .image {
+                DispatchQueue.global(qos: .userInitiated).async {
+                    let img = item.loadImage()
+                    DispatchQueue.main.async { loadedImage = img }
+                }
+            }
+        }
     }
 }
 
