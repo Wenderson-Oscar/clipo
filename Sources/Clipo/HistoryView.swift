@@ -186,6 +186,8 @@ struct HistoryView: View {
 
 struct ClipRow: View {
     let item: ClipItem
+    @State private var isHovering = false
+    @State private var showPreview = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -208,6 +210,19 @@ struct ClipRow: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 3)
+        .onHover { hovering in
+            isHovering = hovering
+            if hovering {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    if isHovering { showPreview = true }
+                }
+            } else {
+                showPreview = false
+            }
+        }
+        .popover(isPresented: $showPreview, arrowEdge: .trailing) {
+            ClipPreview(item: item)
+        }
     }
 
     // MARK: - Thumbnail
@@ -285,6 +300,70 @@ struct ClipRow: View {
         let f = RelativeDateTimeFormatter()
         f.unitsStyle = .short
         return f.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+// MARK: - Preview Popover
+
+struct ClipPreview: View {
+    let item: ClipItem
+
+    var body: some View {
+        Group {
+            switch item.kind {
+            case .image:
+                if let img = item.loadImage() {
+                    Image(nsImage: img)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: 300, maxHeight: 240)
+                        .padding(8)
+                } else {
+                    fallbackText("Imagem indisponível")
+                }
+            case .link:
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("Link", systemImage: "link")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(item.text ?? "")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.primary)
+                        .textSelection(.enabled)
+                }
+                .padding(12)
+                .frame(maxWidth: 280)
+            case .file:
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("Arquivo", systemImage: "doc")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(item.text ?? "")
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(.primary)
+                        .textSelection(.enabled)
+                }
+                .padding(12)
+                .frame(maxWidth: 280)
+            case .text:
+                ScrollView {
+                    Text(item.text ?? "")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.primary)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                }
+                .frame(width: 420, height: min(CGFloat((item.text ?? "").count / 4 + 80), 480))
+            }
+        }
+    }
+
+    private func fallbackText(_ msg: String) -> some View {
+        Text(msg)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(12)
     }
 }
 
