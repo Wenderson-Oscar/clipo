@@ -76,8 +76,10 @@ struct HistoryView: View {
                         .tag(item.id)
                         .listRowInsets(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
                         .contentShape(Rectangle())
-                        .onTapGesture { selection = item.id }
-                        .onTapGesture(count: 2) { onPick(item) }
+                        .onTapGesture {
+                            selection = item.id
+                            onPick(item)
+                        }
                         .contextMenu {
                             Button("Copiar") { onPick(item) }
                             Divider()
