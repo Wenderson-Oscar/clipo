@@ -1,0 +1,41 @@
+# Swift / Xcode
+.build/
+.swiftpm/
+*.o
+*.d
+*.swp
+xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Build output
+build/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# User-specific app data (clipboard history, images, preferences)
+~/Library/Application\ Support/Clipo/
+~/Library/Preferences/com.clipo.app.plist
+
+# Generated icon assets (reproducible from logo.svg via make_icons.py)
+assets/Clipo.iconset/
+assets/Clipo.icns
+assets/menubar.png
+assets/menubar@2x.png
+
+# Duplicate nested assets folder (created by mistake)
+assets/assets/
+
+# Python cache
+__pycache__/
+*.pyc

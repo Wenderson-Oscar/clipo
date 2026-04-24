@@ -1,0 +1,24 @@
+{
+        "configurations": [
+                {
+                        "type": "swift",
+                        "request": "launch",
+                        "args": [],
+                        "cwd": "${workspaceFolder:clipo}",
+                        "name": "Debug Clipo",
+                        "target": "Clipo",
+                        "configuration": "debug",
+                        "preLaunchTask": "swift: Build Debug Clipo"
+                },
+                {
+                        "type": "swift",
+                        "request": "launch",
+                        "args": [],
+                        "cwd": "${workspaceFolder:clipo}",
+                        "name": "Release Clipo",
+                        "target": "Clipo",
+                        "configuration": "release",
+                        "preLaunchTask": "swift: Build Release Clipo"
+                }
+        ]
+}

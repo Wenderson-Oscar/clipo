@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background -->
+  <rect width="200" height="200" rx="42" fill="#0d1117"/>
+
+  <!-- Trunk: root → junction -->
+  <line x1="100" y1="168" x2="100" y2="122"
+        stroke="#16a34a" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Junction → left branch -->
+  <path d="M100 122 C100 100 52 100 52 78"
+        stroke="#22c55e" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Junction → center branch (straight up) -->
+  <line x1="100" y1="122" x2="100" y2="52"
+        stroke="#22c55e" stroke-width="3.5" stroke-linecap="round"/>
+
+  <!-- Junction → right branch -->
+  <path d="M100 122 C100 100 148 100 148 78"
+        stroke="#22c55e" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Root node -->
+  <circle cx="100" cy="168" r="10" fill="#14532d"/>
+  <circle cx="100" cy="168" r="6"  fill="#4ade80"/>
+
+  <!-- Junction node -->
+  <circle cx="100" cy="122" r="9"  fill="#15803d"/>
+  <circle cx="100" cy="122" r="5.5" fill="#22c55e"/>
+
+  <!-- Left leaf node -->
+  <circle cx="52" cy="52" r="16" fill="#14532d"/>
+  <circle cx="52" cy="52" r="10" fill="#16a34a"/>
+  <circle cx="52" cy="52" r="5"  fill="#86efac"/>
+
+  <!-- Center leaf node -->
+  <circle cx="100" cy="52" r="16" fill="#14532d"/>
+  <circle cx="100" cy="52" r="10" fill="#16a34a"/>
+  <circle cx="100" cy="52" r="5"  fill="#86efac"/>
+
+  <!-- Right leaf node -->
+  <circle cx="148" cy="52" r="16" fill="#14532d"/>
+  <circle cx="148" cy="52" r="10" fill="#16a34a"/>
+  <circle cx="148" cy="52" r="5"  fill="#86efac"/>
+</svg>
