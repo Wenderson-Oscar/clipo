@@ -20,7 +20,8 @@ Clipo lives in your menu bar and keeps a searchable history of everything you co
 - **SHA-256 deduplication** — no repeated entries, even if you copy the same thing multiple times
 - **Auto-paste** — selecting an item automatically sends `⌘V` to the focused app
 - **Screenshot auto-copy** — takes a screenshot with `⇧⌘3` / `⇧⌘4` and it's instantly in your clipboard and history, with no file on the Desktop
-- **Configurable preferences** — history limit, auto-paste, launch at login, screenshot mode
+- **Cross-device sync via Tailscale** — copy on Mac A, paste on Mac B; works across every Mac on your tailnet
+- **Configurable preferences** — history limit, auto-paste, launch at login, screenshot mode, sync
 
 ## Requirements
 
@@ -60,6 +61,40 @@ Without this permission, the item is still copied to your clipboard — you just
 | `⎋ Esc` | Close panel |
 | Right-click menu bar icon | Preferences, clear history, quit |
 
+## Cross-Device Sync (Tailscale)
+
+Clipo can mirror your clipboard between every Mac on your [Tailscale](https://tailscale.com) network. Copy on one Mac, and the item shows up in the history of every other Mac signed into the same tailnet.
+
+**How to enable:**
+
+1. Install Tailscale on every Mac and sign them all into the same tailnet.
+2. Install Clipo on each Mac.
+3. Open **Preferences → Sincronização (Tailscale)** and toggle **Compartilhar entre dispositivos** on. Repeat on each Mac.
+4. The peer list in Preferences shows all Macs on your tailnet — green dot means online and reachable.
+
+**How it works:**
+
+- Each Clipo runs a small HTTP server on port `47823`, bound to your Mac's tailnet IP (`100.x.y.z`).
+- When you copy something, Clipo `POST`s the item to every online peer on the tailnet.
+- Incoming items are added to the local history without re-broadcasting (no loops).
+- Connections are accepted **only** from the Tailscale CGNAT range (`100.64.0.0/10`) — anything from outside the tailnet is dropped.
+- All traffic is end-to-end encrypted by Tailscale (WireGuard).
+
+**What gets synced:**
+
+- Text and links — always
+- Images (PNG) — toggleable, capped at 8 MB per item
+- File paths — never (paths don't make sense across machines)
+
+**Requirements:**
+
+- Tailscale CLI binary at one of: `/Applications/Tailscale.app/Contents/MacOS/Tailscale`, `/usr/local/bin/tailscale`, or `/opt/homebrew/bin/tailscale`
+- All devices signed into the same tailnet
+
+**Mobile (iPhone/Android):**
+
+Not supported yet — Clipo is macOS-only. iOS sandboxing also prevents reading the clipboard in the background, so a phone-side app would only sync when actively opened.
+
 ## How Screenshot Auto-Copy Works
 
 Clipo sets macOS to route screenshots directly to the clipboard via:
@@ -87,4 +122,5 @@ Sources/Clipo/
   HistoryView.swift       # SwiftUI list, search, keyboard nav
   SettingsView.swift      # preferences panel UI
   Preferences.swift       # UserDefaults-backed settings
+  TailscaleSync.swift     # peer discovery, HTTP server/client, sync manager
 ```

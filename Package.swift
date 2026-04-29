@@ -19,7 +19,8 @@ let package = Package(
                 .linkedFramework("SwiftUI"),
                 .linkedFramework("Carbon"),
                 .linkedFramework("UniformTypeIdentifiers"),
-                .linkedFramework("ServiceManagement")
+                .linkedFramework("ServiceManagement"),
+                .linkedFramework("Network")
             ]
         )
     ]

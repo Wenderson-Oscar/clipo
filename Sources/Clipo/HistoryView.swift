@@ -14,17 +14,17 @@ struct HistoryView: View {
     var body: some View {
         VStack(spacing: 0) {
             searchBar
-            Divider()
+            Divider().opacity(0.5)
             if filtered.isEmpty {
                 emptyState
             } else {
                 itemList
             }
-            Divider()
+            Divider().opacity(0.5)
             bottomBar
         }
-        .frame(width: 380, height: 500)
-        .background(Color(NSColor.windowBackgroundColor))
+        .frame(width: 400, height: 520)
+        .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .onAppear {
             searchFocused = true
@@ -41,11 +41,11 @@ struct HistoryView: View {
     private var searchBar: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
             TextField("Buscar no histórico…", text: $query)
                 .textFieldStyle(.plain)
-                .font(.system(size: 14))
+                .font(.system(size: 13))
                 .focused($searchFocused)
                 .onSubmit { pickSelected() }
                 .onChange(of: query) { _ in
@@ -57,13 +57,19 @@ struct HistoryView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.tertiary)
-                        .font(.system(size: 14))
+                        .font(.system(size: 13))
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 11)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.primary.opacity(0.06))
+        )
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
     }
 
     // MARK: - List
@@ -72,9 +78,10 @@ struct HistoryView: View {
         ScrollViewReader { proxy in
             List(selection: $selection) {
                 ForEach(filtered) { item in
-                    ClipRow(item: item)
+                    ClipRow(item: item, isSelected: selection == item.id)
                         .tag(item.id)
-                        .listRowInsets(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
+                        .listRowInsets(EdgeInsets(top: 1, leading: 6, bottom: 1, trailing: 6))
+                        .listRowSeparator(.hidden)
                         .contentShape(Rectangle())
                         .onTapGesture {
                             selection = item.id
@@ -105,16 +112,21 @@ struct HistoryView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             Spacer()
-            Image(systemName: query.isEmpty ? "clipboard" : "magnifyingglass")
-                .font(.system(size: 42, weight: .thin))
-                .foregroundStyle(.quaternary)
+            ZStack {
+                Circle()
+                    .fill(Color.primary.opacity(0.05))
+                    .frame(width: 72, height: 72)
+                Image(systemName: query.isEmpty ? "clipboard" : "magnifyingglass")
+                    .font(.system(size: 28, weight: .light))
+                    .foregroundStyle(.tertiary)
+            }
             Text(query.isEmpty ? "Histórico vazio" : "Nada encontrado")
-                .font(.title3.weight(.medium))
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.secondary)
             Text(query.isEmpty ? "Copie algo para começar" : "Tente um termo diferente")
-                .font(.subheadline)
+                .font(.system(size: 12))
                 .foregroundStyle(.tertiary)
             Spacer()
         }
@@ -124,12 +136,16 @@ struct HistoryView: View {
     // MARK: - Bottom Bar
 
     private var bottomBar: some View {
-        HStack(spacing: 8) {
-            Text(query.isEmpty
-                 ? "\(store.items.count) itens"
-                 : "\(filtered.count) de \(store.items.count)")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+        HStack(spacing: 10) {
+            HStack(spacing: 5) {
+                Image(systemName: "tray.full")
+                    .font(.system(size: 10, weight: .medium))
+                Text(query.isEmpty
+                     ? "\(store.items.count) \(store.items.count == 1 ? "item" : "itens")"
+                     : "\(filtered.count) / \(store.items.count)")
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .foregroundStyle(.secondary)
 
             Spacer()
 
@@ -137,14 +153,19 @@ struct HistoryView: View {
                 Button {
                     store.clearAll()
                 } label: {
-                    Text("Limpar tudo")
-                        .font(.caption)
+                    HStack(spacing: 4) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 10))
+                        Text("Limpar")
+                            .font(.system(size: 11))
+                    }
                 }
                 .buttonStyle(.borderless)
                 .foregroundStyle(.secondary)
+                .help("Remover todos os itens")
 
-                Color.secondary.opacity(0.3)
-                    .frame(width: 1, height: 12)
+                Color.secondary.opacity(0.25)
+                    .frame(width: 1, height: 11)
             }
 
             Button {
@@ -157,7 +178,7 @@ struct HistoryView: View {
             .foregroundStyle(.secondary)
             .help("Preferências")
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 14)
         .padding(.vertical, 8)
     }
 
@@ -186,31 +207,40 @@ struct HistoryView: View {
 
 struct ClipRow: View {
     let item: ClipItem
+    var isSelected: Bool = false
     @State private var isHovering = false
     @State private var showPreview = false
     @State private var loadedImage: NSImage? = nil
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .top, spacing: 11) {
             thumbnailView
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(item.displayTitle)
                     .lineLimit(2)
-                    .font(.system(size: 13))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.primary)
-                HStack(spacing: 5) {
-                    kindBadge
-                    Text("·")
-                        .font(.caption2)
-                        .foregroundStyle(.quaternary)
-                    Text(relative(item.createdAt))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let sub = subtitle {
+                    Text(sub)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
                 }
+                metadataLine
+                    .padding(.top, 2)
             }
             Spacer(minLength: 0)
         }
-        .padding(.vertical, 3)
+        .padding(.vertical, 7)
+        .padding(.horizontal, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isHovering && !isSelected
+                      ? Color.primary.opacity(0.05)
+                      : Color.clear)
+        )
         .onHover { hovering in
             isHovering = hovering
             if hovering {
@@ -238,53 +268,121 @@ struct ClipRow: View {
 
     @ViewBuilder
     private var thumbnailView: some View {
-        ZStack {
-            switch item.kind {
-            case .image:
-                if let img = loadedImage {
-                    Image(nsImage: img)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 40, height: 40)
-                        .clipShape(RoundedRectangle(cornerRadius: 7))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 7)
-                                .stroke(Color.secondary.opacity(0.15), lineWidth: 0.5)
-                        )
-                } else {
-                    iconBox("photo", color: .purple)
+        ZStack(alignment: .bottomTrailing) {
+            Group {
+                switch item.kind {
+                case .image:
+                    if let img = loadedImage {
+                        Image(nsImage: img)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 44, height: 44)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.primary.opacity(0.1), lineWidth: 0.5)
+                            )
+                    } else {
+                        iconBox("photo", color: .purple)
+                    }
+                case .link:
+                    iconBox("link", color: .blue)
+                case .file:
+                    iconBox("doc.fill", color: .orange)
+                case .text:
+                    iconBox("text.alignleft", color: .gray)
                 }
-            case .link:
-                iconBox("link", color: .blue)
-            case .file:
-                iconBox("doc", color: .orange)
-            case .text:
-                iconBox("doc.plaintext", color: Color(NSColor.secondaryLabelColor))
             }
         }
-        .frame(width: 40, height: 40)
+        .frame(width: 44, height: 44)
     }
 
     private func iconBox(_ name: String, color: Color) -> some View {
-        RoundedRectangle(cornerRadius: 7)
-            .fill(color.opacity(0.12))
+        RoundedRectangle(cornerRadius: 8)
+            .fill(
+                LinearGradient(
+                    colors: [color.opacity(0.18), color.opacity(0.10)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(color.opacity(0.20), lineWidth: 0.5)
+            )
             .overlay(
                 Image(systemName: name)
-                    .font(.system(size: 17))
+                    .font(.system(size: 18, weight: .regular))
                     .foregroundStyle(color)
             )
     }
 
-    // MARK: - Kind Badge
+    // MARK: - Metadata
 
-    private var kindBadge: some View {
-        Text(kindLabel)
-            .font(.system(size: 9, weight: .semibold))
-            .foregroundStyle(kindColor)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
-            .background(kindColor.opacity(0.12))
-            .clipShape(Capsule())
+    private var metadataLine: some View {
+        HStack(spacing: 4) {
+            Image(systemName: kindIcon)
+                .font(.system(size: 9, weight: .semibold))
+            Text(kindLabel)
+                .font(.system(size: 10, weight: .semibold))
+                .tracking(0.3)
+            dot
+            Text(relative(item.createdAt))
+                .font(.system(size: 10))
+                .foregroundStyle(.tertiary)
+            if let extra = sizeHint {
+                dot
+                Text(extra)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .foregroundStyle(kindColor)
+    }
+
+    private var dot: some View {
+        Circle()
+            .fill(Color.secondary.opacity(0.4))
+            .frame(width: 2, height: 2)
+    }
+
+    /// Linha secundária com contexto extra (domínio, caminho do arquivo etc.).
+    private var subtitle: String? {
+        switch item.kind {
+        case .link:
+            guard let s = item.text,
+                  let host = URL(string: s)?.host else { return nil }
+            return host.replacingOccurrences(of: "www.", with: "")
+        case .file:
+            guard let s = item.text else { return nil }
+            return (s as NSString).lastPathComponent
+        default:
+            return nil
+        }
+    }
+
+    /// Pequena dica numérica no fim da linha de metadados.
+    private var sizeHint: String? {
+        switch item.kind {
+        case .text:
+            let count = (item.text ?? "").count
+            guard count > 0 else { return nil }
+            return count > 999 ? "\(count / 1000)k chars" : "\(count) chars"
+        case .image:
+            guard let img = loadedImage else { return nil }
+            return "\(Int(img.size.width))×\(Int(img.size.height))"
+        default:
+            return nil
+        }
+    }
+
+    private var kindIcon: String {
+        switch item.kind {
+        case .text:  return "text.alignleft"
+        case .link:  return "link"
+        case .image: return "photo"
+        case .file:  return "doc"
+        }
     }
 
     private var kindLabel: String {
@@ -298,7 +396,7 @@ struct ClipRow: View {
 
     private var kindColor: Color {
         switch item.kind {
-        case .text:  return Color(NSColor.secondaryLabelColor)
+        case .text:  return .gray
         case .link:  return .blue
         case .image: return .purple
         case .file:  return .orange

@@ -15,6 +15,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let store = HistoryStore()
     private var clipMonitor: ClipboardMonitor!
     private var screenshotWatcher: ScreenshotWatcher!
+    private var syncManager: TailscaleSyncManager!
+    private var syncObservation: NSObjectProtocol?
     private var dismissMonitor: Any?
 
     // MARK: - Lifecycle
@@ -31,6 +33,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Preferences.shared.screenshotMode = true
         }
 
+        syncManager = TailscaleSyncManager(store: store, monitor: clipMonitor)
+        SyncCoordinator.shared.bind(syncManager)
+        syncManager.start()
+        syncObservation = NotificationCenter.default.addObserver(
+            forName: .clipoSyncSettingsChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.syncManager.stop()
+                self?.syncManager.start()
+            }
+        }
+
         setupStatusItem()
         buildPanel()
         buildSettingsPanel()
@@ -39,6 +55,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         clipMonitor?.stop()
         screenshotWatcher?.stop()
+        syncManager?.stop()
+        if let obs = syncObservation {
+            NotificationCenter.default.removeObserver(obs)
+        }
         removeDismissMonitor()
     }
 
@@ -224,7 +244,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func buildSettingsPanel() {
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 490),
+            contentRect: NSRect(x: 0, y: 0, width: 380, height: 620),
             styleMask: [.titled, .closable, .nonactivatingPanel],
             backing: .buffered,
             defer: false

@@ -12,6 +12,10 @@ final class HistoryStore: ObservableObject {
     private let imagesDir: URL
     private let queue = DispatchQueue(label: "clipo.history.io", qos: .utility)
 
+    /// Chamado quando um item local novo é adicionado, para propagar a peers.
+    /// Itens vindos de peers (via `addRemote*`) NÃO disparam este handler.
+    var outgoingHandler: ((ClipItem) -> Void)?
+
     init() {
         let fm = FileManager.default
         let base = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -32,34 +36,58 @@ final class HistoryStore: ObservableObject {
         let kind: ClipKind = isLink(trimmed) ? .link : .text
         let h = Self.sha256("t:" + trimmed)
         insert(ClipItem(id: UUID(), kind: kind, createdAt: Date(),
-                        text: trimmed, imagePath: nil, hash: h))
+                        text: trimmed, imagePath: nil, hash: h),
+               propagate: true)
     }
 
     /// Adiciona um item de imagem.
     func addImage(_ image: NSImage) {
-        guard let data = image.pngData() else { return }
-        let h = Self.sha256Data(data)
-        if items.first?.hash == h { return }
-        let filename = "\(h.prefix(16))-\(Int(Date().timeIntervalSince1970)).png"
-        let url = imagesDir.appendingPathComponent(filename)
-        do {
-            try data.write(to: url)
-        } catch {
-            NSLog("Clipo: falha ao salvar imagem: \(error)")
-            return
-        }
-        insert(ClipItem(id: UUID(), kind: .image, createdAt: Date(),
-                        text: nil, imagePath: url.path, hash: h))
+        guard let item = makeImageItem(from: image) else { return }
+        insert(item, propagate: true)
     }
 
     /// Adiciona uma referência de arquivo.
     func addFile(_ url: URL) {
         let h = Self.sha256("f:" + url.path)
         insert(ClipItem(id: UUID(), kind: .file, createdAt: Date(),
-                        text: url.path, imagePath: nil, hash: h))
+                        text: url.path, imagePath: nil, hash: h),
+               propagate: true)
     }
 
-    private func insert(_ item: ClipItem) {
+    /// Recebe texto vindo de um peer remoto (não re-propaga).
+    func addRemoteText(_ string: String) {
+        let trimmed = string
+        guard !trimmed.isEmpty else { return }
+        let kind: ClipKind = isLink(trimmed) ? .link : .text
+        let h = Self.sha256("t:" + trimmed)
+        insert(ClipItem(id: UUID(), kind: kind, createdAt: Date(),
+                        text: trimmed, imagePath: nil, hash: h),
+               propagate: false)
+    }
+
+    /// Recebe imagem vinda de um peer remoto (não re-propaga).
+    func addRemoteImage(_ image: NSImage) {
+        guard let item = makeImageItem(from: image) else { return }
+        insert(item, propagate: false)
+    }
+
+    private func makeImageItem(from image: NSImage) -> ClipItem? {
+        guard let data = image.pngData() else { return nil }
+        let h = Self.sha256Data(data)
+        if items.first?.hash == h { return nil }
+        let filename = "\(h.prefix(16))-\(Int(Date().timeIntervalSince1970)).png"
+        let url = imagesDir.appendingPathComponent(filename)
+        do {
+            try data.write(to: url)
+        } catch {
+            NSLog("Clipo: falha ao salvar imagem: \(error)")
+            return nil
+        }
+        return ClipItem(id: UUID(), kind: .image, createdAt: Date(),
+                       text: nil, imagePath: url.path, hash: h)
+    }
+
+    private func insert(_ item: ClipItem, propagate: Bool) {
         // Dedup: se o mais recente já tem o mesmo hash, ignora.
         if let first = items.first, first.hash == item.hash { return }
         // Remove duplicatas existentes do mesmo hash.
@@ -67,6 +95,9 @@ final class HistoryStore: ObservableObject {
         items.insert(item, at: 0)
         trim()
         persist()
+        if propagate {
+            outgoingHandler?(item)
+        }
     }
 
     // MARK: - Ações

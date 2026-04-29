@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject private var prefs = Preferences.shared
+    @ObservedObject private var sync = SyncCoordinator.shared
 
     private let maxItemsOptions = [50, 100, 200, 500, 1000]
 
@@ -63,6 +64,85 @@ struct SettingsView: View {
                     }
                 }
 
+                // MARK: - Sincronização
+                sectionHeader("Sincronização (Tailscale)")
+                settingsGroup {
+                    settingsRow {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Compartilhar entre dispositivos")
+                            Text(sync.tailscaleAvailable
+                                 ? "Os itens copiados serão enviados aos outros dispositivos da sua tailnet"
+                                 : "Tailscale não foi encontrado neste Mac")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Toggle("", isOn: Binding(
+                            get: { prefs.syncEnabled },
+                            set: { newValue in
+                                prefs.syncEnabled = newValue
+                                NotificationCenter.default.post(name: .clipoSyncSettingsChanged, object: nil)
+                                sync.refresh()
+                            }
+                        ))
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                        .disabled(!sync.tailscaleAvailable)
+                    }
+                    Divider().padding(.leading, 14)
+                    settingsRow {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Incluir imagens")
+                            Text("Envia imagens copiadas (até 8 MB)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Toggle("", isOn: $prefs.syncIncludeImages)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                            .disabled(!prefs.syncEnabled)
+                    }
+                    Divider().padding(.leading, 14)
+                    settingsRow {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("Dispositivos detectados")
+                                Spacer()
+                                Button {
+                                    sync.refresh()
+                                } label: {
+                                    Text("Atualizar").font(.caption)
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                            if !sync.tailscaleAvailable {
+                                Text("Instale o Tailscale para detectar peers.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            } else if sync.peers.isEmpty {
+                                Text("Nenhum peer encontrado.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                ForEach(sync.peers, id: \.id) { peer in
+                                    HStack(spacing: 6) {
+                                        Circle()
+                                            .fill(peer.online ? Color.green : Color.gray)
+                                            .frame(width: 7, height: 7)
+                                        Text(peer.name)
+                                            .font(.caption)
+                                        Spacer()
+                                        Text(peer.ip)
+                                            .font(.system(.caption, design: .monospaced))
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // MARK: - Atalhos
                 sectionHeader("Atalhos")
                 settingsGroup {
@@ -92,7 +172,7 @@ struct SettingsView: View {
                 Spacer(minLength: 20)
             }
         }
-        .frame(width: 360, height: 490)
+        .frame(width: 380, height: 620)
         .background(Color(NSColor.windowBackgroundColor))
     }
 
