@@ -20,7 +20,7 @@ Clipo lives in your menu bar and keeps a searchable history of everything you co
 - **SHA-256 deduplication** — no repeated entries, even if you copy the same thing multiple times
 - **Auto-paste** — selecting an item automatically sends `⌘V` to the focused app
 - **Screenshot auto-copy** — takes a screenshot with `⇧⌘3` / `⇧⌘4` and it's instantly in your clipboard and history, with no file on the Desktop
-- **Cross-device sync via Tailscale** — copy on Mac A, paste on Mac B; works across every Mac on your tailnet
+- **Cross-device sync** — Mac ↔ Mac via Tailscale (across your whole tailnet) and Mac ↔ iPhone via Apple Universal Clipboard (no extra app needed)
 - **Configurable preferences** — history limit, auto-paste, launch at login, screenshot mode, sync
 
 ## Requirements
@@ -61,15 +61,19 @@ Without this permission, the item is still copied to your clipboard — you just
 | `⎋ Esc` | Close panel |
 | Right-click menu bar icon | Preferences, clear history, quit |
 
-## Cross-Device Sync (Tailscale)
+## Cross-Device Sync
 
-Clipo can mirror your clipboard between every Mac on your [Tailscale](https://tailscale.com) network. Copy on one Mac, and the item shows up in the history of every other Mac signed into the same tailnet.
+Clipo gives you two complementary ways to move clipboard content between your devices:
+
+### Mac ↔ Mac (via Tailscale)
+
+Clipo mirrors your clipboard between every Mac on your [Tailscale](https://tailscale.com) network. Copy on one Mac, and the item shows up in the history of every other Mac signed into the same tailnet.
 
 **How to enable:**
 
 1. Install Tailscale on every Mac and sign them all into the same tailnet.
 2. Install Clipo on each Mac.
-3. Open **Preferences → Sincronização (Tailscale)** and toggle **Compartilhar entre dispositivos** on. Repeat on each Mac.
+3. Open **Preferences → Sync (Tailscale)** and toggle **Share between devices** on. Repeat on each Mac.
 4. The peer list in Preferences shows all Macs on your tailnet — green dot means online and reachable.
 
 **How it works:**
@@ -89,11 +93,22 @@ Clipo can mirror your clipboard between every Mac on your [Tailscale](https://ta
 **Requirements:**
 
 - Tailscale CLI binary at one of: `/Applications/Tailscale.app/Contents/MacOS/Tailscale`, `/usr/local/bin/tailscale`, or `/opt/homebrew/bin/tailscale`
-- All devices signed into the same tailnet
+- All Macs signed into the same tailnet
 
-**Mobile (iPhone/Android):**
+### Mac ↔ iPhone (via Apple Universal Clipboard)
 
-Not supported yet — Clipo is macOS-only. iOS sandboxing also prevents reading the clipboard in the background, so a phone-side app would only sync when actively opened.
+You can copy on your Mac and paste on your iPhone (or vice-versa) **with no extra app on the iPhone** — this works through Apple's built-in [Universal Clipboard](https://support.apple.com/en-us/102430) (Handoff), and Clipo plugs into it transparently:
+
+- Copy on Mac → Universal Clipboard pushes the content to your iPhone → paste anywhere on iPhone.
+- Copy on iPhone → Universal Clipboard pushes it to your Mac's clipboard → Clipo's monitor picks it up and adds it to your history.
+
+**Requirements (set once, on every device):**
+
+- Same iCloud account on Mac and iPhone
+- Handoff enabled: **Mac → System Settings → General → AirDrop & Handoff → Allow Handoff**, and **iPhone → Settings → General → AirPlay & Handoff → Handoff** on
+- Bluetooth and Wi-Fi on (both devices on the same Wi-Fi network helps)
+
+That's it — no Clipo iOS app needed. Universal Clipboard handles the transport, and Clipo on the Mac handles the history.
 
 ## How Screenshot Auto-Copy Works
 
