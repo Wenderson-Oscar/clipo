@@ -6,6 +6,9 @@ import Network
 extension Notification.Name {
     /// Disparada quando configurações de sincronização mudam (toggle, token, etc.).
     static let clipoSyncSettingsChanged = Notification.Name("clipoSyncSettingsChanged")
+    /// Disparada sempre que o painel de histórico vai ser exibido, para resetar
+    /// busca/seleção e mostrar o item mais recente no topo.
+    static let clipoPanelWillShow = Notification.Name("clipoPanelWillShow")
 }
 
 // MARK: - Modelos

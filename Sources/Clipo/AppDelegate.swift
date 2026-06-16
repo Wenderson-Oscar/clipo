@@ -146,6 +146,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.setFrameOrigin(NSPoint(x: x, y: y))
         panel.makeKeyAndOrderFront(nil)
         installDismissMonitor()
+        // Avisa a HistoryView para resetar busca/seleção e mostrar o item mais
+        // recente no topo (o painel é reutilizado, então onAppear não dispara de novo).
+        // Postado após exibir e no próximo runloop para garantir que a lista já
+        // esteja montada quando o scroll-ao-topo acontecer.
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .clipoPanelWillShow, object: nil)
+        }
     }
 
     private func closePanel() {

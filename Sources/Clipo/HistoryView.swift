@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 struct HistoryView: View {
@@ -9,6 +10,7 @@ struct HistoryView: View {
 
     @State private var query: String = ""
     @State private var selection: UUID?
+    @State private var scrollToTopToken: Int = 0
     @FocusState private var searchFocused: Bool
 
     var body: some View {
@@ -26,10 +28,20 @@ struct HistoryView: View {
         .frame(width: 400, height: 520)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .onAppear {
-            searchFocused = true
-            selection = filtered.first?.id
+        .onAppear { resetToTop() }
+        .onReceive(NotificationCenter.default.publisher(for: .clipoPanelWillShow)) { _ in
+            resetToTop()
         }
+    }
+
+    /// Reseta busca e seleção para o item mais recente (topo) e rola até ele.
+    /// Chamado a cada exibição do painel — que é reutilizado, então onAppear
+    /// sozinho não basta.
+    private func resetToTop() {
+        query = ""
+        selection = filtered.first?.id
+        searchFocused = true
+        scrollToTopToken &+= 1
     }
 
     private var filtered: [ClipItem] {
@@ -98,6 +110,12 @@ struct HistoryView: View {
             .scrollContentBackground(.hidden)
             .onChange(of: selection) { id in
                 if let id = id { proxy.scrollTo(id, anchor: .center) }
+            }
+            .onChange(of: scrollToTopToken) { _ in
+                guard let first = filtered.first?.id else { return }
+                // Próximo runloop: garante que a lista terminou de montar antes
+                // de rolar, senão o scroll vira no-op e a posição antiga persiste.
+                DispatchQueue.main.async { proxy.scrollTo(first, anchor: .top) }
             }
             .background(
                 KeyCaptureView(
